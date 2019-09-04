@@ -1,3 +1,6 @@
+#ifndef FILESYSTEM_OPS_H
+#define FILESYSTEM_OPS_H value
+
 #include <dirent.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -11,3 +14,5 @@ using namespace std;
 
 void get_directories(string full_path, tree<string> &tr);
 string getFileName(const string& s);
+
+#endif

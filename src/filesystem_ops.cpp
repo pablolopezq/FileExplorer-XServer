@@ -33,7 +33,7 @@ void get_directories(string full_path, tree<string> &tr){
 	loc = find(tr.begin(), tr.end(), getFileName(full_path));
 	
 	DIR *dp;
-    struct dirent *dirp;
+  struct dirent *dirp;
 
 	if((dp = opendir(full_path.c_str())) == NULL) {
         cout << "Error opening " << full_path << endl;
