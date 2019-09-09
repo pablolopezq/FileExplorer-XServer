@@ -10,6 +10,8 @@
 #include "filesystem_ops.h"
 #include "structs.h"
 
+#include "App.h"
+
 using namespace std;
  
 Display *display;
@@ -35,8 +37,6 @@ XKeyEvent event;
 
 tree<string> tr;
 int text_y, text_x;
-
-vector<side_text> side_texts;
 
 void create_window(){
 
@@ -72,7 +72,7 @@ void create_window(){
 
 }
 
-bool check_click(int x, int y){
+bool check_click(int x, int y, vector<side_text> & side_texts){
     cout << side_texts.size() << endl;
     for(int i = 0; i < side_texts.size(); i++){
         side_text st = side_texts.at(i);
@@ -83,7 +83,7 @@ bool check_click(int x, int y){
     }
 }
 
-void draw(){
+void draw(vector<side_text> & side_texts){
 
     Font font = XLoadFont(display, "10x20");
     XFontStruct * fontinfo = XLoadQueryFont(display, "10x20");
@@ -102,32 +102,6 @@ void draw(){
     XSetFillStyle(display, gc, FillSolid);
     XSetLineAttributes(display, gc, 2, LineSolid, CapRound, JoinRound);
     XSetFont(display, gc, fontinfo->fid);
-
-    // XDrawPoint(display, win, gc, 5, 5);
-
-    // XDrawLine(display, win, gc, 100, 100, 0, 100);
-
-    // // int x = 30, y = 40;
-    // // int h = 15, w = 45;
-    // // int angle1 = 0, angle2 = 2.109;
-    // // XDrawArc(display, win, gc, x-(w/2), y-(h/2), w, h, angle1, angle2);
-
-    // // XDrawArc(display, win, gc, 50-(15/2), 100-(15/2), 15, 15, 0, 360*64);
-
-    //   {
-    //     XPoint points[] = {
-    //       {0, 0},
-    //       {15, 15},
-    //       {0, 15},
-    //       {0, 0}
-    //     };
-    //     int npoints = sizeof(points)/sizeof(XPoint);
-
-    //     XDrawLines(display, win, gc, points, npoints, CoordModeOrigin);
-    //   }
-
-    // XDrawRectangle(display, win, gc, 120, 150, 50, 60);
-    // XFillRectangle(display, win, gc, 120, 150, 50, 60);
 
     tree<string>::iterator loc;
     string side_path = "Clases";
@@ -152,18 +126,19 @@ void draw(){
             // XDrawString(display, win, gc, 10, 100, "test", 4);
 
             text_y = 50;
-            text_x = 10;
-            cont = 0;
+            text_x = 30;
 
             if(loc != tr.end()) {
+
                 tree<string>::sibling_iterator sib = tr.begin(loc);
+
                 while(sib != tr.end(loc)) {
                     //cout << (*sib) << endl;
 
                     string dir_name = (*sib);
                     int dir_name_length = strlen(dir_name.c_str());
 
-                    XDrawString(display, win, gc, 50, text_y, dir_name.c_str(), dir_name_length);
+                    XDrawString(display, win, gc, text_x, text_y, dir_name.c_str(), dir_name_length);
 
                     int font_direction, font_ascent, font_descent;
                     XCharStruct text_structure;
@@ -180,72 +155,33 @@ void draw(){
 
                     side_texts.push_back(st);
 
-                    cout << side_texts.size() << endl;
-
-                    cout << "Added collision box on \n" << st.top << " -- Top\n" 
-                                                        << st.bottom << " -- Bottom\n" 
-                                                        << st.left << " -- Left\n" 
-                                                        << st.right << " -- Right\n" 
-                                                        << "For text: " << st.text << endl;
+                    // cout << "Added collision box on \n" << st.top << " -- Top\n" 
+                    //                                     << st.bottom << " -- Bottom\n" 
+                    //                                     << st.left << " -- Left\n" 
+                    //                                     << st.right << " -- Right\n" 
+                    //                                     << "For text: " << st.text << endl;
 
                     text_y += 25;
 
                     ++sib;
                 }
 
-                // text_y = 50;
-                // text_x = 400;
+                cout << "Vector size " << side_texts.size() << endl;                
 
-                // tree<string>::iterator sib2 = tr.begin(loc);
-                // tree<string>::iterator end2 = tr.end(loc);
-                // while(sib2 != end2) {
-                //     for(int i = 0; i < tr.depth(sib2) - 1; ++i){
-                //         cout << " ";
-                //         text_x += 10;
-                //     }
-
-                //     cout << (*sib2) << endl;
-
-                //     string dir_name = (*sib2);
-                //     int dir_name_length = strlen(dir_name.c_str());
-
-                //     XDrawString(display, win, gc, text_x, text_y, dir_name.c_str(), dir_name_length);
-
-                //     int font_direction, font_ascent, font_descent;
-                //     XCharStruct text_structure;
-                //     XTextExtents(fontinfo, dir_name.c_str(), dir_name_length,
-                //                  &font_direction, &font_ascent, &font_descent,
-                //                  &text_structure);
-
-                //     side_text st;
-                //     st.text = dir_name;
-                //     st.top = text_y - fontinfo->max_bounds.ascent;
-                //     st.left = text_x + fontinfo->min_bounds.lbearing;
-                //     st.right = (fontinfo->max_bounds.rbearing - fontinfo->min_bounds.lbearing) * dir_name_length;
-                //     st.bottom = text_y + fontinfo->max_bounds.ascent + fontinfo->max_bounds.descent;
-
-                //     side_texts.push_back(st);
-
-                //     cout << "Added collision box on " << st.top << " -- Top\n" << st.bottom << " -- Bottom\n" << st.left << " -- Left\n" << st.right << " -- Right\n";
-
-                //     text_y += 25;
-
-                //     ++sib2;
-                // }
             }
-
-            
 
             break;
 
         case ButtonPress:
+
+            cout << side_texts.size() << endl;
 
             mouse_x = event.x;
             mouse_y = event.y;
 
             cout << "Click on [" << mouse_x << "," << mouse_y << "]\n";
 
-            check_click(mouse_x, mouse_y);
+            check_click(mouse_x, mouse_y, side_texts);
 
             break;
 
@@ -261,8 +197,11 @@ void draw(){
 }
 
 void init(){
+
+    vector<side_text> side_texts;
+
     create_window();
-    draw();
+    draw(side_texts);
 }
 
 void close(){
@@ -277,21 +216,30 @@ void load_directories(){
 
     string path = "/home/pablo/Documents/Clases";
 
-    tr.insert(root, getFileName(path));
+    tr.insert(root, get_file_name(path));
 
     get_directories(path, tr);
-
-    cout << endl;
 }
 
 int main (int argc, char *argv[])
 {
 
-    load_directories();
+    App app;
 
-    init();
-    sleep(5);
-    close();
+    app.create_window(720, 1280, "File Explorer | Pablo");
+    app.set_gc("10x20");
+    app.load_directories();
+    app.draw_loop();
+
+    sleep(10);
+
+    app.close_window();
+
+    // load_directories();
+
+    // init();
+    // sleep(5);
+    // close();
 
     // Display                 *display;
     // Visual                  *visual;

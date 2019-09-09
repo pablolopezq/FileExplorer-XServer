@@ -8,7 +8,7 @@
 
 using namespace std;
 
-string getFileName(const string& s) {
+string get_file_name(const string& s) {
 
    char sep = '/';
 
@@ -30,7 +30,7 @@ void get_directories(string full_path, tree<string> &tr){
 
 	//tr.append_child(root, full_path);
 
-	loc = find(tr.begin(), tr.end(), getFileName(full_path));
+	loc = find(tr.begin(), tr.end(), get_file_name(full_path));
 	
 	DIR *dp;
   struct dirent *dirp;

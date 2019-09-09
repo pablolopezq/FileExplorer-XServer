@@ -13,6 +13,6 @@
 using namespace std;
 
 void get_directories(string full_path, tree<string> &tr);
-string getFileName(const string& s);
+string get_file_name(const string& s);
 
 #endif
