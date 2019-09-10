@@ -1,12 +1,11 @@
 #include <vector>
 #include <iostream>
-#include <dirent.h>
-#include <sys/types.h>
-#include <sys/stat.h>
 
-#include "filesystem_ops.h"
+#include "FilesystemOps.h"
 
-using namespace std;
+using std::vector;
+using std::cout;
+using std::endl;
 
 string get_file_name(const string& s) {
 

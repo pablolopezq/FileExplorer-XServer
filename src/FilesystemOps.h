@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-using namespace std;
+using std::string;
 
 void get_directories(string full_path, tree<string> &tr);
 string get_file_name(const string& s);
