@@ -22,8 +22,6 @@ string get_file_name(const string& s) {
 
 void get_directories(string full_path, tree<string> &tr){
 
-	vector<char *> dirs;
-
 	tree<string>::iterator root = tr.begin();
 	tree<string>::iterator loc;
 

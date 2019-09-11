@@ -5,6 +5,14 @@
 
 using std::string;
 
+enum class ButtonType{
+	FOLDER_NAV,
+	CREATE_FOLDER,
+	DELETE_FOLDER,
+	CREATE_FILE,
+	DELETE_FILE
+};
+
 struct CollisionBox{
 
 	string text;
@@ -12,7 +20,7 @@ struct CollisionBox{
 	int bottom;
 	int left;
 	int right;
-	bool is_folder;
+	ButtonType type;
 
 };
 
