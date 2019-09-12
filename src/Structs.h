@@ -10,7 +10,8 @@ enum class ButtonType{
 	CREATE_FOLDER,
 	DELETE_FOLDER,
 	CREATE_FILE,
-	DELETE_FILE
+	DELETE_FILE,
+	BACK
 };
 
 struct CollisionBox{

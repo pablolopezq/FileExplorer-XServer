@@ -33,22 +33,24 @@ void get_directories(string full_path, tree<string> &tr){
   struct dirent *dirp;
 
 	if((dp = opendir(full_path.c_str())) == NULL) {
-        cout << "Error opening " << full_path << endl;
-    }
+      cout << "Error opening " << full_path << endl;
+  }
+  cout << "Opened " << full_path << endl;
 
     while ((dirp = readdir(dp))) {
         string str(dirp->d_name);
         
-        if(dirp->d_type == 4){
+        if(dirp->d_type == 4 || dirp->d_type == 8){
         	if(str == ".." || str == "." || str[0] == '.')
         		continue;
 
-        	// cout << dirp->d_name << endl;
-        	// cout << "DIR\n";
+        	cout << dirp->d_name << endl;
+        	cout << "DIR\n";
         	//dirs.push_back(dirp->d_name);
         	
         	tr.append_child(loc, str);
-        	get_directories(full_path + "/" + str, tr);
+          if(dirp->d_type == 4)
+            get_directories(full_path + "/" + str, tr);
         }
     }
 

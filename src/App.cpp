@@ -40,7 +40,10 @@ void App::create_window(int height, int width, const char * name){
 }
 
 void App::init(){
+    load_directories();
     create_buttons();
+    get_folders("Clases");
+    active = "Clases";
 }
 
 void App::create_graphical_context(){
@@ -57,21 +60,35 @@ void App::create_graphical_context(){
     XSetForeground(display, graphical_context, BlackPixel(display, screen_number));
     XSetFillStyle(display, graphical_context, FillSolid);
     XSetLineAttributes(display, graphical_context, 2, LineSolid, CapRound, JoinRound);
+    font = XLoadFont(display, "10x20");
+    XSetFont(display, graphical_context, font);
+    XDrawRectangle(display, window, graphical_context, 20, 20, 30, 30);
 }
 
-void App::set_font(const char * font){
-    fontinfo = XLoadQueryFont(display, font);
-    XSetFont(display, graphical_context, fontinfo->fid);
+void App::set_font(const char * font_name){
+    std::cout << "Loading font: " << font_name << std::endl;
+    font = XLoadFont(display, "10x20");
+    std::cout << "Loaded font: " << font_name << std::endl;
+    std::cout << "Setting font: " << font_name << std::endl;
+    XSetFont(display, graphical_context, font);
+    std::cout << "Set font: " << font_name << std::endl;
 }
 
 void App::event_loop(){
 
+    // cout << "Entered event loop\n";
+
     while(1){
+
+        // cout << "Waiting for event...\n";
 
         XNextEvent(display, (XEvent *)&event);
 
+        // cout << "Event caught\n";
+
         switch(event.type){
             case Expose:
+                XClearWindow(display, window);
                 // draw_buttons();
                 // draw_side_panel();
                 //draw_main_panel();
@@ -92,34 +109,65 @@ void App::check_click(int x, int y){
     
     cout << collision_boxes.size() << endl;
 
-    for(int i = 0; i < 4; i++){
+    for(int i = 0; i < collision_boxes.size(); i++){
 
         CollisionBox box = collision_boxes.at(i);
-        //cout << "Checking for collision on " << st.text << " button\n";->
         
         if(x >= box.left && x <= box.right && y >= box.top && y <= box.bottom){
             
-            // active_folder = box.text;
             cout << "Click on " << box.text << " button\n";
+
+            if(box.type == ButtonType::FOLDER_NAV){
+                previous.push(active);
+                active = box.text;
+                get_folders(box.text);
+            }
+
+            if(box.type == ButtonType::BACK){
+                if(!previous.empty()){
+                    std::string go_to = previous.top();
+                    previous.pop();
+                    active = go_to;
+                    get_folders(go_to);
+                }
+            }
 
             XEvent event;
             event.type = Expose;
             XSendEvent(display, window, false, ExposureMask, &event);
 
             break;
-            // cout << "Clearing vector...\n";
-
-            //collision_boxes.clear();
-
-            // cout << "Cleared vector\n";
         }
     }
+
+    for (int i = 0; i < folders.size(); i++){
+        
+        CollisionBox box = folders.at(i);
+        
+        if(x >= box.left && x <= box.right && y >= box.top && y <= box.bottom){
+            
+            cout << "Click on " << box.text << " button\n";
+
+            if(box.type == ButtonType::FOLDER_NAV){
+                previous.push(active);
+                active = box.text;
+                get_folders(box.text);
+            }
+
+            XEvent event;
+            event.type = Expose;
+            XSendEvent(display, window, false, ExposureMask, &event);
+
+            break;
+        }
+    }
+    
 }
 
 void App::create_buttons(){
 
     // Create - Delete buttons
-    vector<string> buttons{"Create Folder", "Delete Folder", 
+    std::vector<string> buttons{"Create Folder", "Delete Folder", 
                            "Create File", "Delete File"};
 
     int button_x = 270;
@@ -153,64 +201,189 @@ void App::create_buttons(){
                 break;
         }
 
-        cout << "Created col box for " << box.text << endl;
+        // cout << "Created col box for " << box.text << endl;
 
         collision_boxes.push_back(box);
 
         button_x += 200;
     }
+
+    std::vector<string> buttons1{"home", "Desktop", "Documents", "Downloads"};
+
+    button_x = 30;
+    button_y = 80;
+
+    for(int i = 0; i < buttons1.size(); i++){
+
+        //cout << "Entered loop\n";
+
+        string name = buttons1.at(i);
+        int name_len = strlen(name.c_str());
+
+        // cout << "Drawing: " << name << " with length " << name_len << endl;
+
+        // XDrawString(display, window, graphical_context, button_x, button_y, name.c_str(), name_len);
+
+        CollisionBox box;
+        box.text = name;
+        box.top = button_y;
+        box.left = button_x;
+        box.right = button_x + 150;
+        box.bottom = button_y + 30;
+        box.type = ButtonType::FOLDER_NAV;
+
+        cout << "Added collision box on \n" << box.top << " -- Top\n" 
+                                            << box.bottom << " -- Bottom\n" 
+                                            << box.left << " -- Left\n" 
+                                            << box.right << " -- Right\n" 
+                                            << "For text: " << box.text << endl;
+
+        collision_boxes.push_back(box);
+
+        button_y += 30;
+    }
+
+    CollisionBox box;
+    box.text = "Back";
+    box.top = 20;
+    box.left = 30;
+    box.right = 90;
+    box.bottom = 50;
+    box.type = ButtonType::BACK;
+
+    collision_boxes.push_back(box);
+}
+
+void App::get_folders(std::string folder){
+
+    folders.clear();
+
+    int folder_x = 275;
+    int folder_y = 80;
+    int text_x = 275;
+    int text_y = 150;
+
+    // std::cout << "Getting folders on " << folder << std::endl;
+
+    tree<std::string>::iterator main_panel_loc;
+
+    // set_font("7x14");
+    // cout << "Set font\n";
+
+    //active_folder = "Compiladores1";
+
+    cout << "Trying to fetch: " << folder << "...\n";
+    main_panel_loc = std::find(file_tree.begin(), file_tree.end(), folder);    
+    cout << "Fetched active folder " << folder << endl;;
+
+    if(main_panel_loc != file_tree.end()) {
+
+        // std::cout << "Loading side panel paths...\n";
+
+        tree<string>::sibling_iterator sib = file_tree.begin(main_panel_loc);
+
+        // std::cout << "Aca\n";
+
+        while(sib != file_tree.end(main_panel_loc)) {
+
+            // cout << "Entering loop\n";
+
+            cout << (*sib) << endl;
+
+            string dir_name = (*sib);
+            int dir_name_length = strlen(dir_name.c_str());
+
+            CollisionBox box;
+            box.text = dir_name;
+            box.top = folder_y;
+            box.left = folder_x;
+            box.right = folder_x + 100;
+            box.bottom = folder_y + 50;
+            box.type = ButtonType::FOLDER_NAV;
+
+            // cout << "Made struct\n";
+
+            folders.push_back(box);
+
+            // cout << "Added collision box on \n" << box.top << " -- Top\n" 
+            //                                     << box.bottom << " -- Bottom\n" 
+            //                                     << box.left << " -- Left\n" 
+            //                                     << box.right << " -- Right\n" 
+            //                                     << "For text: " << box.text << endl;
+
+            text_y += 100;
+            folder_y += 100;
+            
+            // cout << "Increasing iterator...\n";
+            ++sib;
+            // cout << "Increased iterator\n";
+        }
+    }
 }
 
 void App::draw(){
 
-    set_font("10x20");
+    draw_buttons();
+    draw_folders();    
+}
+
+void App::load_directories(){
+
+    tree<std::string>::iterator loc, root;
+
+    root = file_tree.begin();
+
+    std::string path = "/home";
+
+    file_tree.insert(root, get_file_name(path));
+
+    get_directories(path, file_tree);
+}
+
+void App::draw_buttons(){
+
+    XDrawLine(display, window, graphical_context, 250, 50, 1280, 50);
+    XDrawLine(display, window, graphical_context, 250, 0, 250, 720);
 
     for (int i = 0; i < collision_boxes.size(); i++){
         
         CollisionBox box = collision_boxes.at(i);
 
+        // cout << "Fetched " << box.text << endl;
+
         XDrawRectangle(display, window, graphical_context, box.left, box.top, box.right - box.left, box.bottom - box.top);
         XDrawString(display, window, graphical_context, box.left + 10, box.top + 20, box.text.c_str(), strlen(box.text.c_str()));
+
+        // cout << "Drew button " << box.text << endl;
     }
+
+    XDrawLine(display, window, graphical_context, 250, 0, 250, 720);
 }
 
-// void App::load_directories(){
+void App::draw_folders(){
 
-//     tree<std::string>::iterator loc, root;
+    int folder_x = 275;
+    int folder_y = 80;
+    int text_x = 275;
+    int text_y = 150;
 
-//     root = file_tree.begin();
+    for (int i = 0; i < folders.size(); i++){
+        
+        CollisionBox box = folders.at(i);
 
-//     std::string path = "/home/pablo/Documents/Clases";
+        string dir_name = box.text;
+        int dir_name_length = strlen(dir_name.c_str());
 
-//     file_tree.insert(root, get_file_name(path));
+        XDrawRectangle(display, window, graphical_context, folder_x, folder_y, 100, 50);
 
-//     get_directories(path, file_tree);
-// }
+        XDrawString(display, window, graphical_context, text_x, text_y, dir_name.c_str(), dir_name_length);
 
-// void App::draw_buttons(){
+        text_y += 100;
+        folder_y += 100;
+    }
+    
 
-//     set_font("10x20");
-
-//     CollisionBox box;
-//     box.text = "Create Folder";
-//     box.top = 10;
-//     box.bottom = 40;
-//     box.left = 270;
-//     box.right = 420;
-
-//     // cout << "Pushing into vector...\n";
-
-//     // cout << "Created col box for" << box.text << endl;
-
-//     collision_boxes.push_back(box);
-
-//     XDrawLine(display, window, graphical_context, 250, 50, 1280, 50);
-
-//     XDrawRectangle(display, window, graphical_context, 270, 10, 150, 30);
-//     XDrawString(display, window, graphical_context, 280, 30, "Create Folder", 13);
-
-//     // cout << "Pushed into vector\n";
-// }
+}
 
 // void App::draw_side_panel(){
 
