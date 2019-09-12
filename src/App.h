@@ -1,4 +1,6 @@
 #include <X11/Xlib.h>
+#include <X11/Xresource.h>
+#include <X11/Xutil.h>
 #include <vector>
 #include <stack>
 
@@ -18,6 +20,7 @@ public:
     std::vector<CollisionBox> folders;
     std::stack<std::string>previous;
     std::string active;
+    bool deleting = false;
 
     Window window;
     GC graphical_context;
@@ -41,6 +44,7 @@ public:
     void draw();
     void draw_buttons();
     void draw_folders();
+    void get_input(std::string &file_name);
 
     void check_click(int x, int y);
     void load_directories();

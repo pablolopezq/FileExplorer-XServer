@@ -33,7 +33,7 @@ void App::create_window(int height, int width, const char * name){
                           white_pixel);
 
     XStoreName(display, window, name);
-    XSelectInput(display, window, ExposureMask | ButtonPressMask);
+    XSelectInput(display, window, ExposureMask | ButtonPressMask | KeyPressMask);
 
     XMapWindow(display, window);
     XSync(display, 0);
@@ -99,6 +99,10 @@ void App::event_loop(){
                 std::cout << "Click on [" << event.x << "," << event.y << "]\n";
                 check_click(event.x, event.y);
                 break;
+
+            // case KeyPress:
+            //     // std::cout << event.keycode
+            //     break;
         }
 
     }
@@ -131,6 +135,19 @@ void App::check_click(int x, int y){
                     get_folders(go_to);
                 }
             }
+
+            if(box.type == ButtonType::CREATE_FOLDER){
+                std::string file_name;
+                cout << "Getting input..\n";
+                get_input(file_name);
+                cout << "Got input\n";
+                cout << "Received '" << file_name << "' from get_input\n";
+            }
+
+            if(box.type == ButtonType::DELETE_FOLDER){
+                deleting = true;
+            }
+
 
             XEvent event;
             event.type = Expose;
@@ -383,6 +400,47 @@ void App::draw_folders(){
     }
     
 
+}
+
+void App::get_input(std::string &file_name){
+
+    XKeyEvent e;
+    KeySym id;
+    char data[1];
+    bool on = true;
+
+    // cout << "Getting input\n";
+
+    while(on){
+
+        XNextEvent(display, (XEvent *)&e);
+
+        switch (e.type)
+        {
+        case KeyPress:
+            // cout << "Key was pressed\n";
+            XLookupString(&e, data, 1, &id, NULL);
+            // cout << "Key pressed is " << data << endl;
+            // cout << "Keycode is " << id << endl;
+            if(id == 65288 && strlen(file_name.c_str()) != 0){
+                file_name.erase(strlen(file_name.c_str()) - 1, 1);
+            }
+            else if(id == 65293){
+                on = false;
+            }
+            else{
+                file_name += data[0];
+            }
+            break;
+        
+        default:
+            cout << "Nothing\n";
+            break;
+        }
+        cout << "Input is " << file_name << endl;
+
+    }
+    cout << "Finished\n";
 }
 
 // void App::draw_side_panel(){
