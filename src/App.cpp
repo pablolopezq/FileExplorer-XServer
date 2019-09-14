@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <cstring>
+#include <fcntl.h>
 
 using std::cout;
 using std::endl;
@@ -42,8 +43,9 @@ void App::create_window(int height, int width, const char * name){
 void App::init(){
     load_directories();
     create_buttons();
-    get_folders("Clases");
-    active = "Clases";
+    get_folders("/home/pablo/Documents/Clases");
+    active = "/home/pablo/Documents/Clases";
+    previous.push(active);
 }
 
 void App::create_graphical_context(){
@@ -157,18 +159,26 @@ void App::check_click(int x, int y){
         }
     }
 
-    for (int i = 0; i < folders.size(); i++){
+    for (int i = 0; i < active_entries.size(); i++){
         
-        CollisionBox box = folders.at(i);
-        
-        if(x >= box.left && x <= box.right && y >= box.top && y <= box.bottom){
-            
-            cout << "Click on " << box.text << " button\n";
+        Entry entry = active_entries.at(i);
+        CollisionBox box = entry.boundaries;
 
-            if(box.type == ButtonType::FOLDER_NAV){
+        cout << "Checking for collision on " << entry.name << " button\n";
+        cout << "Boundaries are at " << box.left << "," << box.top << endl;
+        
+        if(entry.boundaries.check_collision(x, y)){
+            
+            cout << "Click on " << entry.name << " button\n";
+
+            if(entry.type == Entry_Type::FOLDER){
                 previous.push(active);
-                active = box.text;
-                get_folders(box.text);
+                active = entry.full_path;
+                get_folders(entry.full_path);
+            }
+            else if(entry.type == Entry_Type::FILE){
+                std:string command = "xdg-open " + entry.full_path;
+                system(command.c_str());
             }
 
             XEvent event;
@@ -225,7 +235,7 @@ void App::create_buttons(){
         button_x += 200;
     }
 
-    std::vector<string> buttons1{"home", "Desktop", "Documents", "Downloads"};
+    std::vector<string> buttons1{"/home", "/home/pablo/Desktop", "/home/pablo/Documents", "/home/pablo/Downloads"};
 
     button_x = 30;
     button_y = 80;
@@ -273,69 +283,90 @@ void App::create_buttons(){
 
 void App::get_folders(std::string folder){
 
-    folders.clear();
+    // folders.clear();
+    active_entries.clear();
+
+    FileOps::get_entries(folder, active_entries);
 
     int folder_x = 275;
     int folder_y = 80;
-    int text_x = 275;
-    int text_y = 150;
+    // int text_x = 275;
+    // int text_y = 150;
+
+    for (int i = 0; i < active_entries.size(); i++){
+        
+        Entry &entry = active_entries.at(i);
+
+        CollisionBox box;
+        box.top = folder_y;
+        box.left = folder_x;
+        box.right = folder_x + 100;
+        box.bottom = folder_y + 50;
+
+        entry.boundaries = box;
+
+        folder_y += 100;
+    }
+
+
+    
 
     // std::cout << "Getting folders on " << folder << std::endl;
 
-    tree<std::string>::iterator main_panel_loc;
+    // tree<std::string>::iterator main_panel_loc;
 
-    // set_font("7x14");
-    // cout << "Set font\n";
+    // // set_font("7x14");
+    // // cout << "Set font\n";
 
-    //active_folder = "Compiladores1";
+    // //active_folder = "Compiladores1";
 
-    cout << "Trying to fetch: " << folder << "...\n";
-    main_panel_loc = std::find(file_tree.begin(), file_tree.end(), folder);    
-    cout << "Fetched active folder " << folder << endl;;
+    // cout << "Trying to fetch: " << folder << "...\n";
+    // main_panel_loc = std::find(file_tree.begin(), file_tree.end(), folder);    
+    // cout << "Fetched active folder " << folder << endl;;
 
-    if(main_panel_loc != file_tree.end()) {
+    // if(main_panel_loc != file_tree.end()) {
 
-        // std::cout << "Loading side panel paths...\n";
+    //     std::cout << "Loading main panel paths...\n";
 
-        tree<string>::sibling_iterator sib = file_tree.begin(main_panel_loc);
+    //     tree<string>::sibling_iterator sib = file_tree.begin(main_panel_loc);
 
-        // std::cout << "Aca\n";
+    //     std::cout << "Aca\n";
 
-        while(sib != file_tree.end(main_panel_loc)) {
+    //     while(sib != file_tree.end(main_panel_loc)) {
 
-            // cout << "Entering loop\n";
+    //         cout << "Entering loop\n";
 
-            cout << (*sib) << endl;
+    //         cout << (*sib) << endl;
 
-            string dir_name = (*sib);
-            int dir_name_length = strlen(dir_name.c_str());
+    //         string dir_name = (*sib);
+    //         int dir_name_length = strlen(dir_name.c_str());
 
-            CollisionBox box;
-            box.text = dir_name;
-            box.top = folder_y;
-            box.left = folder_x;
-            box.right = folder_x + 100;
-            box.bottom = folder_y + 50;
-            box.type = ButtonType::FOLDER_NAV;
+    //         CollisionBox box;
+    //         box.text = dir_name;
+    //         box.top = folder_y;
+    //         box.left = folder_x;
+    //         box.right = folder_x + 100;
+    //         box.bottom = folder_y + 50;
+    //         box.type = ButtonType::FOLDER_NAV;
 
-            // cout << "Made struct\n";
+    //         cout << "Made struct\n";
 
-            folders.push_back(box);
+    //         folders.push_back(box);
 
-            // cout << "Added collision box on \n" << box.top << " -- Top\n" 
-            //                                     << box.bottom << " -- Bottom\n" 
-            //                                     << box.left << " -- Left\n" 
-            //                                     << box.right << " -- Right\n" 
-            //                                     << "For text: " << box.text << endl;
+    //         cout << "Added collision box on \n" << box.top << " -- Top\n" 
+    //                                             << box.bottom << " -- Bottom\n" 
+    //                                             << box.left << " -- Left\n" 
+    //                                             << box.right << " -- Right\n" 
+    //                                             << "For text: " << box.text << endl;
 
-            text_y += 100;
-            folder_y += 100;
+    //         text_y += 100;
+    //         folder_y += 100;
             
-            // cout << "Increasing iterator...\n";
-            ++sib;
-            // cout << "Increased iterator\n";
-        }
-    }
+    //         // cout << "Increasing iterator...\n";
+    //         ++sib;
+    //         // cout << "Increased iterator\n";
+    //     }
+    // }
 }
 
 void App::draw(){
@@ -346,15 +377,19 @@ void App::draw(){
 
 void App::load_directories(){
 
-    tree<std::string>::iterator loc, root;
+    // tree<std::string>::iterator loc, root;
 
-    root = file_tree.begin();
+    // root = file_tree.begin();
 
     std::string path = "/home";
 
-    file_tree.insert(root, get_file_name(path));
+    // file_tree.insert(root, get_file_name(path));
 
-    get_directories(path, file_tree);
+    // get_directories(path, file_tree);
+
+    FileOps::get_entries(path, active_entries);
+    cout << "Folder vector size is " << active.size() << endl;
+
 }
 
 void App::draw_buttons(){
@@ -368,8 +403,15 @@ void App::draw_buttons(){
 
         // cout << "Fetched " << box.text << endl;
 
+        std::string t;
+
+        if(box.type == ButtonType::FOLDER_NAV)
+            t = FileOps::get_file_name(box.text);
+        else
+            t = box.text;        
+
         XDrawRectangle(display, window, graphical_context, box.left, box.top, box.right - box.left, box.bottom - box.top);
-        XDrawString(display, window, graphical_context, box.left + 10, box.top + 20, box.text.c_str(), strlen(box.text.c_str()));
+        XDrawString(display, window, graphical_context, box.left + 10, box.top + 20, t.c_str(), strlen(t.c_str()));
 
         // cout << "Drew button " << box.text << endl;
     }
@@ -384,22 +426,33 @@ void App::draw_folders(){
     int text_x = 275;
     int text_y = 150;
 
-    for (int i = 0; i < folders.size(); i++){
-        
-        CollisionBox box = folders.at(i);
+    cout << "Folder vector size is " << active_entries.size() << endl;
 
-        string dir_name = box.text;
-        int dir_name_length = strlen(dir_name.c_str());
+    for (int i = 0; i < active_entries.size(); i++){
+        
+        Entry entry = active_entries.at(i);
+        CollisionBox box = entry.boundaries;
+
+        int dir_name_length = strlen(entry.name.c_str());
 
         XDrawRectangle(display, window, graphical_context, folder_x, folder_y, 100, 50);
 
-        XDrawString(display, window, graphical_context, text_x, text_y, dir_name.c_str(), dir_name_length);
+        XDrawString(display, window, graphical_context, text_x, text_y, entry.name.c_str(), dir_name_length);
 
         text_y += 100;
         folder_y += 100;
     }
     
+    std::string afolder = previous.top();
 
+    std::string act_name = FileOps::get_file_name(active);
+    int act_len = strlen(act_name.c_str());
+
+    cout << "Active folder is " << active << endl;
+
+
+    XDrawString(display, window, graphical_context, 30, 250, "Active folder is:", strlen("Active folder is:"));
+    XDrawString(display, window, graphical_context, 50, 280, act_name.c_str(), act_len);
 }
 
 void App::get_input(std::string &file_name){

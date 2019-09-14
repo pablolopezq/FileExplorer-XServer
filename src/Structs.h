@@ -14,6 +14,11 @@ enum class ButtonType{
 	BACK
 };
 
+enum class Entry_Type{
+	FOLDER,
+	FILE
+};
+
 struct CollisionBox{
 
 	string text;
@@ -23,6 +28,21 @@ struct CollisionBox{
 	int right;
 	ButtonType type;
 
+	bool check_collision(int x, int y){
+		if(x >= left && x <= right && y >= top && y <= bottom){
+			return true;
+		} 
+		return false;
+	}
+
+};
+
+struct Entry{
+
+	string full_path;
+	string name;
+	Entry_Type type;
+	CollisionBox boundaries;
 };
 
 #endif

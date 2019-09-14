@@ -1065,7 +1065,7 @@ iter tree<T, tree_node_allocator>::append_child(iter position, const T& x)
 	// using 'insert'. See the documentation for further information, and sorry about
 	// the API change.
 	assert(position.node!=head);
-	assert(position.node!=feet);
+	// assert(position.node!=feet);
 	assert(position.node);
 
 	tree_node* tmp = alloc_.allocate(1,0);

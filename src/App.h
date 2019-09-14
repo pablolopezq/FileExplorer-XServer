@@ -20,6 +20,7 @@ public:
     std::vector<CollisionBox> folders;
     std::stack<std::string>previous;
     std::string active;
+    std::vector<Entry> active_entries;
     bool deleting = false;
 
     Window window;

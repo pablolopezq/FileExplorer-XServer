@@ -1,5 +1,5 @@
 #ifndef FILESYSTEM_OPS_H
-#define FILESYSTEM_OPS_H value
+#define FILESYSTEM_OPS_H
 
 #include <dirent.h>
 #include <sys/types.h>
@@ -9,14 +9,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include "Structs.h"
 
 using std::string;
 
-void get_directories(string full_path, tree<string> &tr);
-void delete_file(string full_path);
-void delete_folder(string full_path);
-void create_file(string full_path);
-void create_folder(string full_path);
-string get_file_name(const string& s);
+namespace FileOps{
+    void get_entries(string full_path, std::vector<Entry> &entries);
+    void delete_file(string full_path);
+    void delete_folder(string full_path);
+    void create_file(string full_path);
+    void create_folder(string full_path);
+    string get_file_name(const string& s);
+}
 
 #endif
