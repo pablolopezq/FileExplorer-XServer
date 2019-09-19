@@ -84,11 +84,8 @@ void FileOps::delete_folder(string full_path){
 
     DIR *dir;
     struct dirent *entry;
-    char path[PATH_MAX];
+    std::string path;
 
-    if (path == NULL) {
-        fprintf(stderr, "Out of memory error\n");
-    }
     dir = opendir(full_path.c_str());
     if (dir == NULL) {
         perror("Error opendir()");
@@ -96,7 +93,9 @@ void FileOps::delete_folder(string full_path){
 
     while ((entry = readdir(dir)) != NULL) {
         if (strcmp(entry->d_name, ".") && strcmp(entry->d_name, "..")) {
-            snprintf(path, (size_t) PATH_MAX, "%s/%s", full_path, entry->d_name);
+
+            path = full_path + "/" + entry->d_name;
+
             if (entry->d_type == DT_DIR) {
                 delete_folder(path);
             }
@@ -106,7 +105,9 @@ void FileOps::delete_folder(string full_path){
              * quite a dangerous thing to do, and this program is not very
              * well tested, we are just printing as if we are deleting.
              */
-            printf("(not really) Deleting: %s\n", path);
+            // printf("(not really) Deleting: %s\n", path);
+            cout << "(not really) Deleting " << path << endl;
+            remove(path.c_str());
             /*
              * When you are finished testing this and feel you are ready to do the real
              * deleting, use this: remove*STUB*(path);
@@ -122,12 +123,19 @@ void FileOps::delete_folder(string full_path){
      * Now the directory is emtpy, finally delete the directory itself. (Just
      * printing here, see above) 
      */
-    printf("(not really) Deleting: %s\n", full_path);
+    cout << "(not really) Deleting " << full_path << endl;
+    
+    if(remove(full_path.c_str()) != 0){
+      cout << "Folder deletion failed\n";
+    }
+    else{
+      cout << "Folder deleted successfully\n";
+    }
 
 }
 
 void FileOps::create_folder(string full_path){
-	if (mkdir(full_path.c_str(), 775) == -1) 
+	if (mkdir(full_path.c_str(), S_IRWXU | S_IRWXG | S_IRWXO) == -1) 
         cout << "Error :  " << strerror(errno) << endl; 
     else
         cout << "Directory created" << endl; 

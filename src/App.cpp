@@ -46,6 +46,8 @@ void App::init(){
     get_folders("/home/pablo/Documents/Clases");
     active = "/home/pablo/Documents/Clases";
     previous.push(active);
+    deleting = false;
+    getting_input = false;
 }
 
 void App::create_graphical_context(){
@@ -101,6 +103,33 @@ void App::event_loop(){
                 std::cout << "Click on [" << event.x << "," << event.y << "]\n";
                 check_click(event.x, event.y);
                 break;
+            
+            case KeyPress:
+                if(getting_input){
+                    XLookupString(&event, data, 1, &id, NULL);
+                    // cout << "Key pressed is " << data << endl;
+                    // cout << "Keycode is " << id << endl;
+                    if(id == 65288 && strlen(input_str.c_str()) != 0){
+                        input_str.erase(strlen(input_str.c_str()) - 1, 1);
+                    }
+                    else if(id == 65293){
+                        getting_input = false;
+                        std::string new_dir = active + "/" + input_str;
+                        cout << "Creating directory " << new_dir << endl;
+                        FileOps::create_folder(new_dir);
+                        get_folders(active);
+                        input_str = "";
+                    }
+                    else{
+                        input_str += data[0];
+                    }
+                    cout << "Input is " << input_str << endl;
+
+                    XEvent event;
+                    event.type = Expose;
+                    XSendEvent(display, window, false, ExposureMask, &event);
+                }
+                break;
 
             // case KeyPress:
             //     // std::cout << event.keycode
@@ -119,7 +148,7 @@ void App::check_click(int x, int y){
 
         CollisionBox box = collision_boxes.at(i);
         
-        if(x >= box.left && x <= box.right && y >= box.top && y <= box.bottom){
+        if(box.check_collision(x, y)){
             
             cout << "Click on " << box.text << " button\n";
 
@@ -139,14 +168,15 @@ void App::check_click(int x, int y){
             }
 
             if(box.type == ButtonType::CREATE_FOLDER){
-                std::string file_name;
-                cout << "Getting input..\n";
-                get_input(file_name);
-                cout << "Got input\n";
-                cout << "Received '" << file_name << "' from get_input\n";
+                // cout << "Getting input..\n";
+                // get_input();
+                // cout << "Got input\n";
+                // cout << "Received '" << input_str << "' from get_input\n";
+                c_folder = true;
+                getting_input = true;
             }
 
-            if(box.type == ButtonType::DELETE_FOLDER){
+            if(box.type == ButtonType::DELETE_FOLDER || box.type == ButtonType::DELETE_FILE){
                 deleting = true;
             }
 
@@ -172,13 +202,27 @@ void App::check_click(int x, int y){
             cout << "Click on " << entry.name << " button\n";
 
             if(entry.type == Entry_Type::FOLDER){
-                previous.push(active);
-                active = entry.full_path;
-                get_folders(entry.full_path);
+                if(deleting){
+                    FileOps::delete_folder(entry.full_path);
+                    deleting = false;
+                    get_folders(active);
+                }
+                else{
+                    previous.push(active);
+                    active = entry.full_path;
+                    get_folders(entry.full_path);
+                }
             }
             else if(entry.type == Entry_Type::FILE){
-                std:string command = "xdg-open " + entry.full_path;
-                system(command.c_str());
+                if(deleting){
+                    FileOps::delete_file(entry.full_path);
+                    deleting = false;
+                    get_folders(active);
+                }
+                else{
+                    std:string command = "xdg-open " + entry.full_path;
+                    system(command.c_str());
+                }
             }
 
             XEvent event;
@@ -372,7 +416,11 @@ void App::get_folders(std::string folder){
 void App::draw(){
 
     draw_buttons();
-    draw_folders();    
+    draw_folders();
+
+    XDrawLine(display, window, graphical_context, 250, 650, 1280, 650);
+    XDrawLine(display, window, graphical_context, 250, 680, 1280, 680);
+    XDrawString(display, window, graphical_context, 260, 670, input_str.c_str(), strlen(input_str.c_str()));
 }
 
 void App::load_directories(){
@@ -455,7 +503,7 @@ void App::draw_folders(){
     XDrawString(display, window, graphical_context, 50, 280, act_name.c_str(), act_len);
 }
 
-void App::get_input(std::string &file_name){
+void App::get_input(){
 
     XKeyEvent e;
     KeySym id;
@@ -468,6 +516,8 @@ void App::get_input(std::string &file_name){
 
         XNextEvent(display, (XEvent *)&e);
 
+        XDrawLine(display, window, graphical_context, 250, 500, 1280, 500);
+
         switch (e.type)
         {
         case KeyPress:
@@ -475,14 +525,14 @@ void App::get_input(std::string &file_name){
             XLookupString(&e, data, 1, &id, NULL);
             // cout << "Key pressed is " << data << endl;
             // cout << "Keycode is " << id << endl;
-            if(id == 65288 && strlen(file_name.c_str()) != 0){
-                file_name.erase(strlen(file_name.c_str()) - 1, 1);
+            if(id == 65288 && strlen(input_str.c_str()) != 0){
+                input_str.erase(strlen(input_str.c_str()) - 1, 1);
             }
             else if(id == 65293){
                 on = false;
             }
             else{
-                file_name += data[0];
+                input_str += data[0];
             }
             break;
         
@@ -490,7 +540,7 @@ void App::get_input(std::string &file_name){
             cout << "Nothing\n";
             break;
         }
-        cout << "Input is " << file_name << endl;
+        cout << "Input is " << input_str << endl;
 
     }
     cout << "Finished\n";

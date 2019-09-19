@@ -22,6 +22,10 @@ public:
     std::string active;
     std::vector<Entry> active_entries;
     bool deleting = false;
+    bool getting_input, c_folder, c_file;
+    std::string input_str;
+    KeySym id;
+    char data[1];
 
     Window window;
     GC graphical_context;
@@ -45,7 +49,7 @@ public:
     void draw();
     void draw_buttons();
     void draw_folders();
-    void get_input(std::string &file_name);
+    void get_input();
 
     void check_click(int x, int y);
     void load_directories();
