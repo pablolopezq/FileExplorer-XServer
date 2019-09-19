@@ -48,6 +48,8 @@ void App::init(){
     previous.push(active);
     deleting = false;
     getting_input = false;
+    c_file = false;
+    c_folder = false;
 }
 
 void App::create_graphical_context(){
@@ -116,7 +118,12 @@ void App::event_loop(){
                         getting_input = false;
                         std::string new_dir = active + "/" + input_str;
                         cout << "Creating directory " << new_dir << endl;
-                        FileOps::create_folder(new_dir);
+                        if(c_folder){
+                            FileOps::create_folder(new_dir);
+                        }
+                        else if(c_file){
+                            FileOps::create_file(new_dir);
+                        }
                         get_folders(active);
                         input_str = "";
                     }
@@ -173,6 +180,11 @@ void App::check_click(int x, int y){
                 // cout << "Got input\n";
                 // cout << "Received '" << input_str << "' from get_input\n";
                 c_folder = true;
+                getting_input = true;
+            }
+
+            if(box.type == ButtonType::CREATE_FILE){
+                c_file = true;
                 getting_input = true;
             }
 

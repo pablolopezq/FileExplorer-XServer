@@ -19,7 +19,15 @@ namespace FileOps{
     void delete_folder(string full_path);
     void create_file(string full_path);
     void create_folder(string full_path);
+    void create_symlink(string src, string dest);
+    void create_hardlink(string src, string dest);
+    void delete_link(string full_path);
+    void copy_file(string src, string dest);
+    void move_file(string src, string dest);
+    void copy_dir(string src, string dest);
+    void move_dir(string src, string dest);
     string get_file_name(const string& s);
+
 }
 
 #endif

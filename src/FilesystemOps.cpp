@@ -3,12 +3,71 @@
 #include <stdio.h>
 #include <cstring>
 #include <fcntl.h>
+#include <errno.h>
 
 #include "FilesystemOps.h"
 
 using std::vector;
 using std::cout;
 using std::endl;
+
+int cp(const char *to, const char *from){
+    int fd_to, fd_from;
+    char buf[4096];
+    ssize_t nread;
+    int saved_errno;
+
+    fd_from = open(from, O_RDONLY);
+    if (fd_from < 0)
+        return -1;
+
+    fd_to = open(to, O_WRONLY | O_CREAT | O_EXCL, 0666);
+    if (fd_to < 0)
+        goto out_error;
+
+    while (nread = read(fd_from, buf, sizeof buf), nread > 0)
+    {
+        char *out_ptr = buf;
+        ssize_t nwritten;
+
+        do {
+            nwritten = write(fd_to, out_ptr, nread);
+
+            if (nwritten >= 0)
+            {
+                nread -= nwritten;
+                out_ptr += nwritten;
+            }
+            else if (errno != EINTR)
+            {
+                goto out_error;
+            }
+        } while (nread > 0);
+    }
+
+    if (nread == 0)
+    {
+        if (close(fd_to) < 0)
+        {
+            fd_to = -1;
+            goto out_error;
+        }
+        close(fd_from);
+
+        /* Success! */
+        return 0;
+    }
+
+  out_error:
+    saved_errno = errno;
+
+    close(fd_from);
+    if (fd_to >= 0)
+        close(fd_to);
+
+    errno = saved_errno;
+    return -1;
+}
 
 string FileOps::get_file_name(const string& s) {
 
@@ -142,8 +201,56 @@ void FileOps::create_folder(string full_path){
 }
 
 void FileOps::create_file(string full_path){
-  if (creat(full_path.c_str(), 775) == -1) 
+  if (creat(full_path.c_str(), S_IRWXU | S_IRWXG | S_IRWXO) == -1) 
         cout << "Error :  " << strerror(errno) << endl; 
     else
-        cout << "Directory created" << endl; 
+        cout << "File created" << endl; 
+}
+
+void FileOps::create_symlink(string src, string dest){
+  if (symlink(src.c_str(),dest.c_str()) == -1) 
+        cout << "Error :  " << strerror(errno) << endl; 
+    else
+        cout << "SymLink created" << endl; 
+}
+
+void FileOps::create_hardlink(string src, string dest){
+  if (link(src.c_str(),dest.c_str()) == -1) 
+        cout << "Error :  " << strerror(errno) << endl; 
+    else
+        cout << "Link created" << endl; 
+}
+
+void FileOps::delete_link(string full_path){
+  if (unlink(full_path.c_str()) == -1) 
+        cout << "Error :  " << strerror(errno) << endl; 
+    else
+        cout << "SymLink Deleted" << endl; 
+}
+
+void FileOps::copy_file(string src, string dest){
+  if (cp(src.c_str(), dest.c_str()) == -1) 
+        cout << "Error :  " << strerror(errno) << endl; 
+    else
+        cout << "File Deleted" << endl; 
+}
+
+void FileOps::move_file(string src, string dest){
+  if (cp(src.c_str(), dest.c_str()) == -1) 
+        cout << "Error :  " << strerror(errno) << endl; 
+    else{
+        cout << "File Deleted" << endl; 
+        delete_file(src);
+    }
+}
+
+void FileOps::copy_dir(string src, string dest){
+    string command = "cp " + src + " " + dest;
+    system(command.c_str());
+}
+
+void FileOps::move_dir(string src, string dest){
+    string command = "cp " + src + " " + dest;
+    system(command.c_str());
+    delete_folder(src);
 }
