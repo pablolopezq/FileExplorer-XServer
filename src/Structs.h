@@ -11,7 +11,13 @@ enum class ButtonType{
 	DELETE_FOLDER,
 	CREATE_FILE,
 	DELETE_FILE,
-	BACK
+	BACK,
+	CREATE_SYMLINK,
+	DELETE_SYMLINK,
+	CREATE_LINK,
+	COPY,
+	PASTE,
+	CUT
 };
 
 enum class Entry_Type{
@@ -43,6 +49,7 @@ struct Entry{
 	string name;
 	Entry_Type type;
 	CollisionBox boundaries;
+	bool highlighted;
 };
 
 #endif

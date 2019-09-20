@@ -203,7 +203,7 @@ void App::check_click(int x, int y){
 
     for (int i = 0; i < active_entries.size(); i++){
         
-        Entry entry = active_entries.at(i);
+        Entry &entry = active_entries.at(i);
         CollisionBox box = entry.boundaries;
 
         cout << "Checking for collision on " << entry.name << " button\n";
@@ -219,10 +219,14 @@ void App::check_click(int x, int y){
                     deleting = false;
                     get_folders(active);
                 }
-                else{
+                else if(entry.highlighted){
                     previous.push(active);
                     active = entry.full_path;
                     get_folders(entry.full_path);
+                }
+                else{
+                    set_highlight_off();
+                    entry.highlighted = true;
                 }
             }
             else if(entry.type == Entry_Type::FILE){
@@ -231,9 +235,13 @@ void App::check_click(int x, int y){
                     deleting = false;
                     get_folders(active);
                 }
-                else{
+                else if(entry.highlighted){
                     std:string command = "xdg-open " + entry.full_path;
                     system(command.c_str());
+                }
+                else{
+                    set_highlight_off();
+                    entry.highlighted = true;
                 }
             }
 
@@ -251,14 +259,16 @@ void App::create_buttons(){
 
     // Create - Delete buttons
     std::vector<string> buttons{"Create Folder", "Delete Folder", 
-                           "Create File", "Delete File"};
+                                "Create File", "Delete File", 
+                                "Create SymLink", "Delete SymLink",
+                                "Create Link", "Copy", "Cut", "Paste"};
 
-    int button_x = 270;
-    int button_y = 10;
+    int button_x = 30;
+    int button_y = 400;
     int button_width = 150;
     int button_height = 30;
 
-    for(int i = 0; i < 4; i++){
+    for(int i = 0; i < 10; i++){
 
         string name = buttons.at(i);
 
@@ -282,13 +292,31 @@ void App::create_buttons(){
             case 3:
                 box.type = ButtonType::DELETE_FILE;
                 break;
+            case 4:
+                box.type = ButtonType::CREATE_SYMLINK;
+                break;
+            case 5:
+                box.type = ButtonType::DELETE_SYMLINK;
+                break;
+            case 6:
+                box.type = ButtonType::CREATE_LINK;
+                break;
+            case 7:
+                box.type = ButtonType::COPY;
+                break;
+            case 8:
+                box.type = ButtonType::CUT;
+                break;
+            case 9:
+                box.type = ButtonType::PASTE;
+                break;
         }
 
         // cout << "Created col box for " << box.text << endl;
 
         collision_boxes.push_back(box);
 
-        button_x += 200;
+        button_y += 30;
     }
 
     std::vector<string> buttons1{"/home", "/home/pablo/Desktop", "/home/pablo/Documents", "/home/pablo/Downloads"};
@@ -345,7 +373,7 @@ void App::get_folders(std::string folder){
     FileOps::get_entries(folder, active_entries);
 
     int folder_x = 275;
-    int folder_y = 80;
+    int folder_y = 30;
     // int text_x = 275;
     // int text_y = 150;
 
@@ -356,10 +384,11 @@ void App::get_folders(std::string folder){
         CollisionBox box;
         box.top = folder_y;
         box.left = folder_x;
-        box.right = folder_x + 100;
+        box.right = folder_x + 110;
         box.bottom = folder_y + 50;
 
         entry.boundaries = box;
+        entry.highlighted = false;
 
         folder_y += 100;
     }
@@ -454,8 +483,8 @@ void App::load_directories(){
 
 void App::draw_buttons(){
 
-    XDrawLine(display, window, graphical_context, 250, 50, 1280, 50);
-    XDrawLine(display, window, graphical_context, 250, 0, 250, 720);
+    // XDrawLine(display, window, graphical_context, 250, 50, 1280, 50);
+    // XDrawLine(display, window, graphical_context, 250, 0, 250, 720);
 
     for (int i = 0; i < collision_boxes.size(); i++){
         
@@ -482,7 +511,7 @@ void App::draw_buttons(){
 void App::draw_folders(){
 
     int folder_x = 275;
-    int folder_y = 80;
+    int folder_y = 30;
     int text_x = 275;
     int text_y = 150;
 
@@ -495,9 +524,12 @@ void App::draw_folders(){
 
         int dir_name_length = strlen(entry.name.c_str());
 
-        XDrawRectangle(display, window, graphical_context, folder_x, folder_y, 100, 50);
+        XDrawRectangle(display, window, graphical_context, box.left, box.top, 100, 50);
 
-        XDrawString(display, window, graphical_context, text_x, text_y, entry.name.c_str(), dir_name_length);
+        if(entry.highlighted)
+            XFillRectangle(display, window, graphical_context, box.left, box.top, 100, 50);
+
+        XDrawString(display, window, graphical_context, box.left, box.top + 70, entry.name.c_str(), dir_name_length);
 
         text_y += 100;
         folder_y += 100;
@@ -558,8 +590,25 @@ void App::get_input(){
     cout << "Finished\n";
 }
 
-// void App::draw_side_panel(){
+void App::set_highlight_off(){
 
+    for (int i = 0; i < active_entries.size(); i++){
+        Entry &entry = active_entries.at(i);
+        entry.highlighted = false;
+    }
+}
+
+Entry& App::get_highlighted(){
+
+    for (int i = 0; i < active_entries.size(); i++){
+        Entry &entry = active_entries.at(i);
+        if(entry.highlighted){
+            return entry;
+        }
+    }
+}
+
+// void App::draw_side_panel(){
 //     // cout << "Drawing side panel\n";
 
 //     set_font("10x20");

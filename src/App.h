@@ -50,6 +50,8 @@ public:
     void draw_buttons();
     void draw_folders();
     void get_input();
+    void set_highlight_off();
+    Entry& get_highlighted();
 
     void check_click(int x, int y);
     void load_directories();

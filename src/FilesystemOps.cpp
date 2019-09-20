@@ -223,7 +223,7 @@ void FileOps::create_hardlink(string src, string dest){
 
 void FileOps::delete_link(string full_path){
   if (unlink(full_path.c_str()) == -1) 
-        cout << "Error :  " << strerror(errno) << endl; 
+        cout << "Error :  " << strerror(errno) << endl;
     else
         cout << "SymLink Deleted" << endl; 
 }
