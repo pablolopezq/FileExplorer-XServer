@@ -22,10 +22,11 @@ public:
     std::string active;
     std::vector<Entry> active_entries;
     bool deleting = false;
-    bool getting_input, c_folder, c_file;
+    bool getting_input, c_folder, c_file, c_symlink, c_link, cut, pasting;
     std::string input_str;
     KeySym id;
     char data[1];
+    std::string to_copy;
 
     Window window;
     GC graphical_context;
@@ -51,6 +52,7 @@ public:
     void draw_folders();
     void get_input();
     void set_highlight_off();
+    bool is_highlighted();
     Entry& get_highlighted();
 
     void check_click(int x, int y);

@@ -1,8 +1,11 @@
 #include "App.h"
+#include "FilesystemOps.h"
 
 #include <iostream>
 
 int main(){
+
+    // FileOps::copy_dir("/home/pablo/Documents/Clases/GeneracionEmpresas1", "/home/pablo/Documents/Clases/test");
 
     App app;
 

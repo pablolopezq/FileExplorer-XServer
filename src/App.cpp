@@ -50,6 +50,9 @@ void App::init(){
     getting_input = false;
     c_file = false;
     c_folder = false;
+    c_symlink = false;
+    c_link = false;
+    to_copy = "";
 }
 
 void App::create_graphical_context(){
@@ -124,6 +127,22 @@ void App::event_loop(){
                         else if(c_file){
                             FileOps::create_file(new_dir);
                         }
+                        else if(c_symlink){
+                            Entry &entry = get_highlighted();
+                            FileOps::create_symlink(entry.full_path, new_dir);
+                        }
+                        else if(c_link){
+                            Entry &entry = get_highlighted();
+                            FileOps::create_hardlink(entry.full_path, new_dir);    
+                        }
+                        else if(pasting){
+                            if(cut){
+                                FileOps::move_dir(to_copy, new_dir);
+                            }
+                            else{
+                                FileOps::copy_dir(to_copy, new_dir);
+                            }
+                        }
                         get_folders(active);
                         input_str = "";
                     }
@@ -188,10 +207,47 @@ void App::check_click(int x, int y){
                 getting_input = true;
             }
 
-            if(box.type == ButtonType::DELETE_FOLDER || box.type == ButtonType::DELETE_FILE){
-                deleting = true;
+            if(box.type == ButtonType::DELETE_FOLDER || box.type == ButtonType::DELETE_FILE || box.type == ButtonType::DELETE_SYMLINK){
+                if(is_highlighted()){
+                    Entry& entry = get_highlighted();
+                    if(entry.type == Entry_Type::FILE){
+                        FileOps::delete_file(entry.full_path);
+                        get_folders(active);
+                    }
+                    else if(entry.type == Entry_Type::FOLDER){
+                        FileOps::delete_folder(entry.full_path);
+                        get_folders(active);
+                    }
+                    else if(entry.type == Entry_Type::SYMLINK){
+                        FileOps::delete_link(entry.full_path);
+                        get_folders(active);
+                    }
+                }
+                set_highlight_off();
+                //deleting = true;
             }
-
+            if(box.type == ButtonType::CREATE_SYMLINK){
+                c_symlink = true;
+                getting_input = true;
+            }
+            if(box.type == ButtonType::CREATE_LINK){
+                c_link = true;
+                getting_input = true;
+            }
+            if(box.type == ButtonType::COPY){
+                Entry& entry = get_highlighted();
+                to_copy = entry.full_path;
+                cut = false;
+            }
+            if(box.type == ButtonType::CUT){
+                Entry& entry = get_highlighted();
+                to_copy = entry.full_path;
+                cut = true;
+            }
+            if(box.type == ButtonType::PASTE){
+                getting_input = true;
+                pasting = true;
+            }
 
             XEvent event;
             event.type = Expose;
@@ -236,7 +292,24 @@ void App::check_click(int x, int y){
                     get_folders(active);
                 }
                 else if(entry.highlighted){
+                    set_highlight_off();
                     std:string command = "xdg-open " + entry.full_path;
+                    system(command.c_str());
+                }
+                else{
+                    set_highlight_off();
+                    entry.highlighted = true;
+                }
+            }
+            else if(entry.type == Entry_Type::SYMLINK){
+                if(deleting){
+                    FileOps::delete_file(entry.full_path);
+                    deleting = false;
+                    get_folders(active);
+                }
+                else if(entry.highlighted){
+                    set_highlight_off();
+                    string command = "xdg-open " + entry.full_path;
                     system(command.c_str());
                 }
                 else{
@@ -387,6 +460,31 @@ void App::get_folders(std::string folder){
         box.right = folder_x + 110;
         box.bottom = folder_y + 50;
 
+        if(i > 5){
+            box.left += 200;
+            box.top -= 600;
+            box.right = box.left + 110;
+            box.bottom = box.top + 50;
+        }
+        if(i > 11){
+            box.left += 200;
+            box.top -= 700;
+            box.right = box.left + 110;
+            box.bottom = box.top + 50;
+        }
+        if(i > 18){
+            box.left += 200;
+            box.top -= 700;
+            box.right = box.left + 110;
+            box.bottom = box.top + 50;
+        }
+        if(i > 25){
+            box.left += 200;
+            box.top -= 700;
+            box.right = box.left + 110;
+            box.bottom = box.top + 50;
+        }
+
         entry.boundaries = box;
         entry.highlighted = false;
 
@@ -459,8 +557,9 @@ void App::draw(){
     draw_buttons();
     draw_folders();
 
-    XDrawLine(display, window, graphical_context, 250, 650, 1280, 650);
-    XDrawLine(display, window, graphical_context, 250, 680, 1280, 680);
+    XDrawLine(display, window, graphical_context, 250, 650, 900, 650);
+    XDrawLine(display, window, graphical_context, 250, 680, 900, 680);
+    XDrawLine(display, window, graphical_context, 900, 650, 900, 680);
     XDrawString(display, window, graphical_context, 260, 670, input_str.c_str(), strlen(input_str.c_str()));
 }
 
@@ -519,17 +618,40 @@ void App::draw_folders(){
 
     for (int i = 0; i < active_entries.size(); i++){
         
-        Entry entry = active_entries.at(i);
-        CollisionBox box = entry.boundaries;
+        Entry& entry = active_entries.at(i);
+        CollisionBox& box = entry.boundaries;
 
         int dir_name_length = strlen(entry.name.c_str());
+
+        std::string new_name = entry.name;
+
+        if(dir_name_length > 15){
+            new_name = entry.name.substr(0, 12) + "...";
+            dir_name_length = 15;
+        }
+
+        
 
         XDrawRectangle(display, window, graphical_context, box.left, box.top, 100, 50);
 
         if(entry.highlighted)
             XFillRectangle(display, window, graphical_context, box.left, box.top, 100, 50);
 
-        XDrawString(display, window, graphical_context, box.left, box.top + 70, entry.name.c_str(), dir_name_length);
+        XDrawString(display, window, graphical_context, box.left, box.top + 70, new_name.c_str(), dir_name_length);
+        
+        std::string type;
+
+        if(entry.type == Entry_Type::FOLDER){
+            type = "Dir";
+        }
+        else if (entry.type == Entry_Type::FILE){
+            type = "File";
+        }
+        else{
+            type = "Link";
+        }
+
+        XDrawString(display, window, graphical_context, box.left + 10 , box.top + 20, type.c_str(), strlen(type.c_str()));
 
         text_y += 100;
         folder_y += 100;
@@ -604,6 +726,16 @@ Entry& App::get_highlighted(){
         Entry &entry = active_entries.at(i);
         if(entry.highlighted){
             return entry;
+        }
+    }
+}
+
+bool App::is_highlighted(){
+
+    for (int i = 0; i < active_entries.size(); i++){
+        Entry &entry = active_entries.at(i);
+        if(entry.highlighted){
+            return true;
         }
     }
 }

@@ -22,7 +22,8 @@ enum class ButtonType{
 
 enum class Entry_Type{
 	FOLDER,
-	FILE
+	FILE,
+	SYMLINK
 };
 
 struct CollisionBox{

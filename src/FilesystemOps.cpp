@@ -103,14 +103,28 @@ void FileOps::get_entries(string full_path, std::vector<Entry> &entries){
         string name(dirp->d_name);
         string full_name(full_path + "/" + name);
         
-        if(dirp->d_type == 4 || dirp->d_type == 8){
+        if(dirp->d_type == 4 || dirp->d_type == 8 || dirp->d_type == DT_LNK){
         	if(name == ".." || name == "." || name[0] == '.')
         		continue;
 
         Entry entry;
         entry.name = name;
         entry.full_path = full_name;
-        entry.type = dirp->d_type == 4 ? Entry_Type::FOLDER : Entry_Type::FILE;
+        switch (dirp->d_type)
+        {
+        case DT_DIR:
+            entry.type = Entry_Type::FOLDER;
+            break;
+        case DT_REG:
+            entry.type = Entry_Type::FILE;
+            break;
+        case DT_LNK:
+            entry.type = Entry_Type::SYMLINK;
+            break;
+        
+        default:
+            break;
+        }
 
         entries.push_back(entry);
 
@@ -229,28 +243,73 @@ void FileOps::delete_link(string full_path){
 }
 
 void FileOps::copy_file(string src, string dest){
-  if (cp(src.c_str(), dest.c_str()) == -1) 
+  if (cp(dest.c_str(), src.c_str()) == -1) 
         cout << "Error :  " << strerror(errno) << endl; 
     else
-        cout << "File Deleted" << endl; 
+        cout << "File Copied" << endl;
 }
 
 void FileOps::move_file(string src, string dest){
   if (cp(src.c_str(), dest.c_str()) == -1) 
         cout << "Error :  " << strerror(errno) << endl; 
     else{
-        cout << "File Deleted" << endl; 
+        cout << "File Moved" << endl; 
         delete_file(src);
     }
 }
 
 void FileOps::copy_dir(string src, string dest){
-    string command = "cp " + src + " " + dest;
-    system(command.c_str());
+    // string command = "cp " + src + " " + dest;
+    // system(command.c_str());
+
+    if(src == dest){
+        dest += "(1)";
+    }
+
+    DIR *dir;
+    struct dirent *entry;
+    std::string path, dest_path;
+
+    dir = opendir(src.c_str());
+    if (dir == NULL) {
+        perror("Error opendir()");
+    }
+
+    create_folder(dest);
+
+    while ((entry = readdir(dir)) != NULL) {
+        if (strcmp(entry->d_name, ".") && strcmp(entry->d_name, "..")) {
+
+            path = src + "/" + entry->d_name;
+            dest_path = dest + "/" + entry->d_name;
+
+            if (entry->d_type == DT_DIR) {
+                // create_folder(dest);
+                copy_dir(path, dest_path);
+            }
+
+            /*
+             * Here, the actual deletion must be done.  Beacuse this is
+             * quite a dangerous thing to do, and this program is not very
+             * well tested, we are just printing as if we are deleting.
+             */
+            // printf("(not really) Deleting: %s\n", path);
+            cout << "(not really) Deleting " << path << endl;
+            // remove(path.c_str());
+            copy_file(path, dest + "/" + entry->d_name);
+            /*
+             * When you are finished testing this and feel you are ready to do the real
+             * deleting, use this: remove*STUB*(path);
+             * (see "man 3 remove")
+             * Please note that I DONT TAKE RESPONSIBILITY for data you delete with this!
+             */
+        }
+
+    }
+    closedir(dir);
 }
 
 void FileOps::move_dir(string src, string dest){
-    string command = "cp " + src + " " + dest;
-    system(command.c_str());
+    copy_dir(src, dest);
     delete_folder(src);
 }
